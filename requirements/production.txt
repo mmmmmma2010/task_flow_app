@@ -1,0 +1,10 @@
+-r base.txt
+
+# Production Monitoring
+sentry-sdk==1.40.0
+
+# CORS Headers
+django-cors-headers==4.3.1
+
+# Production Database
+dj-database-url==2.1.0
