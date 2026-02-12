@@ -1,0 +1,170 @@
+# Render.com Blueprint for TaskFlow Application
+# This file defines all services needed to deploy the application on Render.com
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: taskflow-db
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: POSTGRES_DB
+        value: taskflow_db
+      - key: POSTGRES_USER
+        value: taskflow_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    disk:
+      name: taskflow-db-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+
+  # Redis Cache and Celery Broker
+  - type: redis
+    name: taskflow-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  # Django Web Service
+  - type: web
+    name: taskflow-web
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/tasks/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskflow-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USE_TLS
+        value: true
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: noreply@taskflow.com
+    buildCommand: |
+      pip install -r requirements/production.txt
+      python manage.py collectstatic --noinput
+    startCommand: |
+      python manage.py migrate --noinput
+      gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+
+  # Celery Worker Service
+  - type: worker
+    name: taskflow-celery-worker
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        fromService:
+          name: taskflow-web
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskflow-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+    startCommand: celery -A config worker --loglevel=info --concurrency=2
+
+  # Celery Beat Service (Periodic Tasks)
+  - type: worker
+    name: taskflow-celery-beat
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        fromService:
+          name: taskflow-web
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskflow-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: taskflow-redis
+          type: redis
+          property: connectionString
+    startCommand: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+databases:
+  - name: taskflow-db
+    databaseName: taskflow_db
+    user: taskflow_user
+    plan: starter
+    region: oregon
