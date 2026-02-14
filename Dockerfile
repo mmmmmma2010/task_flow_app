@@ -15,14 +15,17 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     musl-dev \
     libpq-dev \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
 WORKDIR /app
 
 # Install Python dependencies
-COPY requirements/production.txt requirements/
+COPY requirements/ requirements/
 RUN pip install --upgrade pip && \
+    pip install -r requirements/base.txt && \
+    pip install -r requirements/development.txt && \
     pip install -r requirements/production.txt
 
 # Stage 2: Application

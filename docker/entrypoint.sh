@@ -7,6 +7,10 @@ set -e
 
 echo "Starting entrypoint script..."
 
+# Set default values for DB_HOST and DB_PORT if not set
+export DB_HOST=${DB_HOST:-db}
+export DB_PORT=${DB_PORT:-5432}
+
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL..."
 while ! nc -z $DB_HOST $DB_PORT; do
@@ -25,9 +29,9 @@ echo "Redis is ready!"
 echo "Running database migrations..."
 python manage.py migrate --noinput
 
-# Collect static files
-echo "Collecting static files..."
-python manage.py collectstatic --noinput --clear
+# Collect static files (skip if already done in Dockerfile)
+# echo "Collecting static files..."
+# python manage.py collectstatic --noinput --clear
 
 # Create superuser if it doesn't exist (for development)
 if [ "$DJANGO_SETTINGS_MODULE" = "config.settings.development" ]; then
