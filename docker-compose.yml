@@ -106,19 +106,7 @@ services:
       - taskflow_network
     restart: unless-stopped
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: taskflow_nginx
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "80:80"
-    depends_on:
-      - web
-    networks:
-      - taskflow_network
-    restart: unless-stopped
+
 
 volumes:
   postgres_data:
