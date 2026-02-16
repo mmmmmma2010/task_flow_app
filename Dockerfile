@@ -42,8 +42,8 @@ COPY --chown=appuser:appuser . /app/
 RUN mkdir -p /app/staticfiles /app/media /app/logs && \
     chown -R appuser:appuser /app/staticfiles /app/media /app/logs
 
-# Make entrypoint executable
-RUN chmod +x /app/docker/entrypoint.sh
+# Make entrypoint and start script executable
+RUN chmod +x /app/docker/entrypoint.sh /app/docker/start.sh
 
 # Switch to non-root user
 USER appuser
