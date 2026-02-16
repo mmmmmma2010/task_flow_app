@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database
   - type: pserv
     name: taskflow-db
-    plan: starter
+    plan: free
     region: oregon
     databaseName: taskflow_db
     user: taskflow_user
@@ -11,7 +11,7 @@ services:
   # Redis (Cache + Celery Broker)
   - type: redis
     name: taskflow-redis
-    plan: starter
+    plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
@@ -20,7 +20,7 @@ services:
   - type: web
     name: taskflow-web
     env: docker
-    plan: starter
+    plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -80,107 +80,20 @@ services:
       - key: GUNICORN_TIMEOUT
         value: "120"
 
+      # Celery Configuration for consolidated service
+      - key: CELERY_CONCURRENCY
+        value: "1"
+
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements/production.txt
       python manage.py collectstatic --noinput --clear
 
-    startCommand: |
-      python manage.py migrate --noinput
-      gunicorn config.wsgi:application \
-        --bind 0.0.0.0:$PORT \
-        --workers ${GUNICORN_WORKERS:-2} \
-        --threads ${GUNICORN_THREADS:-4} \
-        --worker-class sync \
-        --worker-tmp-dir /dev/shm \
-        --timeout ${GUNICORN_TIMEOUT:-120} \
-        --graceful-timeout 30 \
-        --keep-alive 5 \
-        --max-requests 1000 \
-        --max-requests-jitter 50 \
-        --access-logfile - \
-        --error-logfile - \
-        --log-level info \
-        --capture-output
-
-  # Celery Worker
-  - type: worker
-    name: taskflow-celery-worker
-    env: docker
-    plan: starter
-    region: oregon
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: SECRET_KEY
-        fromService:
-          name: taskflow-web
-          type: web
-          envVarKey: SECRET_KEY
-      - key: DATABASE_URL
-        fromDatabase:
-          name: taskflow-db
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          name: taskflow-redis
-          type: redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          name: taskflow-redis
-          type: redis
-          property: connectionString
-      - key: CELERY_CONCURRENCY
-        value: "2"
-
-    startCommand: |
-      celery -A config worker \
-        --loglevel=info \
-        --concurrency=${CELERY_CONCURRENCY:-2} \
-        --max-tasks-per-child=1000 \
-        --time-limit=300 \
-        --soft-time-limit=270
-
-  # Celery Beat (Periodic Tasks)
-  - type: worker
-    name: taskflow-celery-beat
-    env: docker
-    plan: starter
-    region: oregon
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: SECRET_KEY
-        fromService:
-          name: taskflow-web
-          type: web
-          envVarKey: SECRET_KEY
-      - key: DATABASE_URL
-        fromDatabase:
-          name: taskflow-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: taskflow-redis
-          type: redis
-          property: connectionString
-
-    startCommand: |
-      celery -A config beat \
-        --loglevel=info \
-        --scheduler django_celery_beat.schedulers:DatabaseScheduler \
-        --pidfile=/tmp/celerybeat.pid
+    startCommand: /app/docker/start.sh
 
 databases:
   - name: taskflow-db
     databaseName: taskflow_db
     user: taskflow_user
-    plan: starter
+    plan: free
     region: oregon
