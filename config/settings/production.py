@@ -8,7 +8,7 @@ import dj_database_url
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',') + ['.vercel.app']
 
 # Database configuration from DATABASE_URL (Render.com provides this)
 if config('DATABASE_URL', default=None):
