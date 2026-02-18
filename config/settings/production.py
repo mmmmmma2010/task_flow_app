@@ -8,7 +8,10 @@ import dj_database_url
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',') + ['.vercel.app']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',') + ['.railway.app', 'railway.app']
+
+# CSRF Trust for Railway
+CSRF_TRUSTED_ORIGINS = ['https://' + host for host in ALLOWED_HOSTS if host]
 
 # Database configuration from DATABASE_URL (Render.com provides this)
 if config('DATABASE_URL', default=None):
