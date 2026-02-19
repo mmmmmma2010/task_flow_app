@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 def wait_for_service(service_name, url_env, default_host, default_port):
     url = os.environ.get(url_env)
     if url:
+        print(f"Found {url_env}, parsing...")
         if 'sqlite' in url:
             print(f"{service_name} uses SQLite, skipping wait.")
             return
@@ -17,6 +18,7 @@ def wait_for_service(service_name, url_env, default_host, default_port):
              print(f"Could not parse host/port from {url_env}, skipping wait.")
              return
     else:
+        print(f"{url_env} not found, falling back to defaults.")
         host = os.environ.get(default_host, 'db' if service_name == 'PostgreSQL' else 'redis')
         port = int(os.environ.get(default_port, 5432 if service_name == 'PostgreSQL' else 6379))
     
