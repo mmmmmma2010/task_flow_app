@@ -7,23 +7,8 @@ set -e
 
 echo "Starting entrypoint script..."
 
-# Set default values for DB_HOST and DB_PORT if not set
-export DB_HOST=${DB_HOST:-db}
-export DB_PORT=${DB_PORT:-5432}
-
-# Wait for PostgreSQL to be ready
-echo "Waiting for PostgreSQL..."
-while ! nc -z $DB_HOST $DB_PORT; do
-  sleep 0.1
-done
-echo "PostgreSQL is ready!"
-
-# Wait for Redis to be ready
-echo "Waiting for Redis..."
-while ! nc -z redis 6379; do
-  sleep 0.1
-done
-echo "Redis is ready!"
+# Wait for services using Python script
+python docker/wait_for_services.py
 
 # Run database migrations
 echo "Running database migrations..."
