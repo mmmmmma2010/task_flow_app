@@ -19,18 +19,22 @@ python manage.py migrate --noinput
 # python manage.py collectstatic --noinput --clear
 
 # Create superuser if it doesn't exist (for development)
-if [ "$DJANGO_SETTINGS_MODULE" = "config.settings.development" ]; then
-    echo "Creating superuser (if not exists)..."
-    python manage.py shell << END
+# Create superuser if it doesn't exist (for any environment)
+
+echo "Ensuring superuser exists..."
+python manage.py shell <<'END'
+import os
 from django.contrib.auth import get_user_model
 User = get_user_model()
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-    print('Superuser created: admin/admin123')
+username = os.getenv('ADMIN_USERNAME', 'admin')
+email = os.getenv('ADMIN_EMAIL', 'admin@example.com')
+password = os.getenv('ADMIN_PASSWORD', 'admin123')
+if not User.objects.filter(username=username).exists():
+    User.objects.create_superuser(username, email, password)
+    print(f"Superuser created: {username}/{password}")
 else:
-    print('Superuser already exists')
+    print(f"Superuser '{username}' already exists")
 END
-fi
 
 echo "Entrypoint script completed!"
 
