@@ -61,7 +61,7 @@ if SENTRY_DSN:
     )
 
 # Logging - Send errors to file and console
-LOGGING['handlers']['file']['filename'] = '/var/log/django/django.log'
+LOGGING['handlers']['file']['filename'] = BASE_DIR / 'logs' / 'django.log'
 
 # Cache timeout - longer in production
 CACHES['default']['TIMEOUT'] = 600  # 10 minutes
