@@ -17,12 +17,15 @@ INSTALLED_APPS += [
 # CORS Headers for local development (if frontend is separate)
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost:5173',  # Vite dev server
     'http://localhost:8080',
+    
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',  # Vite dev server
     'http://127.0.0.1:8080',
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 
 # Email backend for development (console)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
