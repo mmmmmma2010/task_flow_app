@@ -177,6 +177,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = [
+            'id',
             'title',
             'description',
             'priority',
@@ -277,7 +278,11 @@ class CompletedTaskSerializer(serializers.ModelSerializer):
             'days_since_completion',
             'completion_summary',
         ]
-        read_only_fields = '__all__'
+        read_only_fields = [
+            'id', 'title', 'description', 'priority', 'due_date', 
+            'completed_at', 'created_by', 'assigned_to', 'created_at',
+            'days_since_completion', 'completion_summary'
+        ]
     
     def get_days_since_completion(self, obj):
         """Get days since task was completed."""

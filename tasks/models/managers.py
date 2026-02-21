@@ -69,44 +69,14 @@ class TaskQuerySet(models.QuerySet):
         return self.filter(assigned_to=user, is_deleted=False)
 
 
-class TaskManager(models.Manager):
+class TaskManager(models.Manager.from_queryset(TaskQuerySet)):
     """
     Custom Manager for Task model.
     
-    Provides default filtering and custom query methods.
+    Provides default filtering and custom query methods by inheriting
+    from TaskQuerySet.
     """
-    
-    def get_queryset(self):
-        """Override to use custom QuerySet."""
-        return TaskQuerySet(self.model, using=self._db)
-    
-    def active(self):
-        """Return only active (non-deleted) tasks."""
-        return self.get_queryset().active()
-    
-    def deleted(self):
-        """Return only soft-deleted tasks."""
-        return self.get_queryset().deleted()
-    
-    def completed(self):
-        """Return only completed tasks."""
-        return self.get_queryset().completed()
-    
-    def pending(self):
-        """Return only pending tasks."""
-        return self.get_queryset().pending()
-    
-    def in_progress(self):
-        """Return only in-progress tasks."""
-        return self.get_queryset().in_progress()
-    
-    def overdue(self):
-        """Return overdue tasks."""
-        return self.get_queryset().overdue()
-    
-    def high_priority(self):
-        """Return high priority tasks."""
-        return self.get_queryset().high_priority()
+    pass
 
 
 class CompletedTaskManager(models.Manager):
